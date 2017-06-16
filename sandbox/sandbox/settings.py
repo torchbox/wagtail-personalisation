@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'wagtailfontawesome',
     'modelcluster',
     'taggit',
-    'debug_toolbar',
+    # 'debug_toolbar',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -67,7 +67,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
