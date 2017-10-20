@@ -44,6 +44,32 @@ def user_from_data(user_id):
         return AnonymousUser
 
 
+class SessionFieldWrapper:
+    def __init__(self, parent, field):
+        self.parent = parent
+        self._field = field
+
+    def __repr__(self):
+        return "<Session Keys: [{}]>".format(self.field)
+
+    def __contains__(self, value):
+        return value in self.field
+
+    def __len__(self):
+        if not self.field:
+            return 0
+        return len(self.field.split(','))
+
+    @property
+    def field(self):
+        return getattr(self.parent, self._field)
+
+    def add(self, value):
+        if self.field:
+            value = ','.join((self.field, value))
+        setattr(self.parent, self._field, value)
+
+
 @python_2_unicode_compatible
 class Segment(ClusterableModel):
     """The segment model."""
@@ -98,7 +124,7 @@ class Segment(ClusterableModel):
             "set until the number is reached. After this no more users will be added."
         )
     )
-    sessions = models.ManyToManyField(Session)
+    session_keys = models.TextField(default='')
     frozen = models.BooleanField(default=False)
 
     objects = SegmentQuerySet.as_manager()
@@ -125,7 +151,7 @@ class Segment(ClusterableModel):
                 ) for rule_model in AbstractBaseRule.__subclasses__()
             ], heading=_("Rules")),
         ]
-
+        self.sessions = SessionFieldWrapper(self, 'session_keys')
         super(Segment, self).__init__(*args, **kwargs)
 
     def __str__(self):
@@ -149,7 +175,13 @@ class Segment(ClusterableModel):
 
     @property
     def is_full(self):
-        return self.sessions.count() >= self.count
+        return len(self.sessions) >= self.count
+
+    @property
+    def can_populate(self):
+        return (
+            self.id and self.is_static and not self.frozen and self.is_consistent
+        )
 
     @property
     def can_populate(self):

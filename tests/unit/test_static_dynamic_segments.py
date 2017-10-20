@@ -23,7 +23,7 @@ def test_session_added_to_static_segment_at_creation(rf, site, client):
     # We need to trigger the post init
     segment = Segment.objects.get(id=segment.id)
 
-    assert session.session_key in segment.sessions.values_list('session_key', flat=True)
+    assert session.session_key in segment.sessions
 
 
 @pytest.mark.django_db
@@ -44,7 +44,7 @@ def test_mixed_static_dynamic_session_doesnt_generate_at_creation(rf, site, clie
     # We need to trigger the post init
     segment = Segment.objects.get(id=segment.id)
 
-    assert not segment.sessions.all()
+    assert not segment.sessions
 
 
 @pytest.mark.django_db
@@ -57,7 +57,8 @@ def test_session_not_added_to_static_segment_after_creation(rf, site, client):
     session.save()
     client.get(site.root_page.url)
 
-    assert not segment.sessions.all()
+    segment.refresh_from_db()
+    assert not segment.sessions
 
 
 @pytest.mark.django_db
@@ -70,7 +71,8 @@ def test_session_added_to_static_segment_after_creation(rf, site, client):
     session.save()
     client.get(site.root_page.url)
 
-    assert session.session_key in segment.sessions.values_list('session_key', flat=True)
+    segment.refresh_from_db()
+    assert session.session_key in segment.sessions
 
 
 @pytest.mark.django_db
@@ -87,10 +89,11 @@ def test_session_not_added_to_static_segment_after_full(rf, site, client):
     second_session.create()
     client.get(site.root_page.url)
 
+    segment.refresh_from_db()
     assert session.session_key != second_session.session_key
-    assert segment.sessions.count() == 1
-    assert session.session_key in segment.sessions.values_list('session_key', flat=True)
-    assert second_session.session_key not in segment.sessions.values_list('session_key', flat=True)
+    assert len(segment.sessions) == 1
+    assert session.session_key in segment.sessions
+    assert second_session.session_key not in segment.sessions
 
 
 @pytest.mark.django_db
@@ -107,7 +110,10 @@ def test_sessions_not_added_to_static_segment_if_rule_not_static(client, site):
     )
     segment.save()
 
-    assert not segment.sessions.all()
+    # We need to trigger the post init
+    segment = Segment.objects.get(id=segment.id)
+
+    assert not segment.sessions
 
 
 @pytest.mark.django_db
